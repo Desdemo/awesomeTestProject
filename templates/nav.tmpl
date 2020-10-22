@@ -1,0 +1,16 @@
+{{ if .email }}
+    <ul class="navbar-nav ">
+        <li class="nav-item">
+            <a class="nav-link" href="/user/profile?id={{.id}}">{{ .email }}</a>
+        </li>
+    </ul>
+{{ else }}
+    <ul class="navbar-nav ">
+        <li class="nav-item">
+            <a class="nav-link" data-toggle="modal" data-target="#login-modal">登录</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-toggle="modal" data-target="#register-modal">注册</a>
+        </li>
+    </ul>
+{{end}}
