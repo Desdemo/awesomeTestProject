@@ -7,53 +7,49 @@ import (
 )
 
 type UserModel struct {
-	ID            int
+	Id            int    `form:"id"`
 	Email         string `form:"email" binding:"email"`
 	Password      string `form:"password"`
 	PasswordAgain string `form:"password-again"`
 	Avatar        sql.NullString
 }
 
-func (user *UserModel) Save() int64 {
-	result, err := initDB.Db.Exec("insert into ginhello.user (email,password) values (?,?)", user.Email, user.Password)
-	if err != nil {
-		log.Panicln("user insert error", err.Error())
+func (user UserModel) TableName() string {
+	return "user"
+}
+
+func (user *UserModel) Save() int {
+	result := initDB.Db.Create(&user)
+	if result.Error != nil {
+		log.Panicln("user insert error", result.Error.Error())
 	}
-	id, err := result.LastInsertId()
-	if err != nil {
-		log.Panicln("user insert id error", err.Error())
-	}
+	id := result.Value.(int)
 	return id
 }
 
 func (user *UserModel) QueryByEmail() UserModel {
 	u := UserModel{}
-	row := initDB.Db.QueryRow("select * from user where email = ?;", user.Email)
-	e := row.Scan(&u.ID, &u.Email, &u.Password)
-	if e != nil {
-		log.Panicln(e)
+	result := initDB.Db.Where("email = ?", user.Email).First(&u)
+	if result.Error != nil {
+		log.Panicln(result.Error.Error())
 	}
 	return u
 }
 
 func (user *UserModel) QueryById(id int) (UserModel, error) {
 	u := UserModel{}
-	row := initDB.Db.QueryRow("select * from user where id = ?;", id)
-	e := row.Scan(&u.ID, &u.Email, &u.Password, &u.Avatar)
-	if e != nil {
-		log.Panicln(e)
+	row := initDB.Db.First(&u, id)
+	if row.Error != nil {
+		log.Panicln(row.Error.Error())
 	}
-	return u, e
+	return u, row.Error
 }
 
 func (user *UserModel) Update(id int) error {
-	var stmt, e = initDB.Db.Prepare("update user set password=?,avatar=? where id = ?")
-	if e != nil {
-		log.Panicln("发生了错误", e.Error())
+	user.Id = id
+	result := initDB.Db.Model(&user).Update("password", "avatar")
+	if result.Error != nil {
+		log.Panicln("发生了错误", result.Error.Error())
 	}
-	_, e = stmt.Exec(user.Password, user.Avatar.Valid, user.ID)
-	if e != nil {
-		log.Panicln("错误", e.Error())
-	}
-	return e
+	return result.Error
 }

@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 )
 
@@ -15,4 +16,13 @@ func RootPath() string {
 	i := strings.LastIndex(s, "\\")
 	path := s[0 : i+1]
 	return path
+}
+
+func CheckExist(fileName string) string {
+	return path.Ext(fileName)
+}
+
+func CheckPermission(src string) bool {
+	_, err := os.Stat(src)
+	return os.IsPermission(err)
 }

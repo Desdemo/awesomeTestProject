@@ -7,6 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strings"
+
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func retHelloGinAndMethod(context *gin.Context) {
@@ -23,9 +26,17 @@ func SetupRouter() *gin.Engine {
 		//userGroup.GET("/:name", handler.UserSave)
 		userGroup.POST("/register", handler.UserRegister)
 		userGroup.POST("/login", handler.UserLogin)
-		userGroup.GET("/profile", handler.UserProfile)
-		userGroup.POST("/update", handler.UpdateUserProfile)
+		userGroup.GET("/profile/", middleware.Auth(), handler.UserProfile)
+		userGroup.POST("/update", middleware.Auth(), handler.UpdateUserProfile)
 	}
+
+	articleGroup := router.Group("")
+	{
+		articleGroup.POST("/article", handler.Insert)
+	}
+
+	url := ginSwagger.URL("http://localhost:8080/swagger/doc.json")
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
 
 	if mode := gin.Mode(); mode == gin.TestMode {
 		router.LoadHTMLGlob("./../templates/*")

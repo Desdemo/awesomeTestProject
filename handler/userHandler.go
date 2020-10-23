@@ -40,9 +40,17 @@ func UserLogin(context *gin.Context) {
 	}
 	u := user.QueryByEmail()
 	if u.Password == user.Password {
+		token, err := utils.GenerateJwt(u.Id)
+		if err != nil {
+			log.Println("token 生成失败")
+		}
+		context.Header("Authorization", "Bearer "+token)
+
 		log.Println("登录成功", u.Email)
 		context.HTML(http.StatusOK, "index.tmpl", gin.H{
 			"email": u.Email,
+			"id":    u.Id,
+			"token": token,
 		})
 	}
 }
@@ -64,7 +72,7 @@ func UserProfile(context *gin.Context) {
 
 func UpdateUserProfile(ctx *gin.Context) {
 	var u model.UserModel
-	if err := ctx.ShouldBind(u); err != nil {
+	if err := ctx.ShouldBind(&u); err != nil {
 		ctx.HTML(http.StatusOK, "error.tmpl", gin.H{
 			"error": err.Error(),
 		})
@@ -87,7 +95,7 @@ func UpdateUserProfile(ctx *gin.Context) {
 		log.Panicln("无法创建文件夹", e.Error())
 	}
 	fileName := strconv.FormatInt(time.Now().Unix(), 10) + file.Filename
-	e = ctx.SaveUploadedFile(file, path+fileName)
+	e = ctx.SaveUploadedFile(file, path+"\\"+fileName)
 	if e != nil {
 		ctx.HTML(http.StatusOK, "error.tmpl", gin.H{
 			"error": e,
@@ -97,12 +105,12 @@ func UpdateUserProfile(ctx *gin.Context) {
 
 	avatarUrl := "http://localhost:8080/avatar/" + fileName
 	u.Avatar = sql.NullString{String: avatarUrl}
-	e = u.Update(u.ID)
+	e = u.Update(u.Id)
 	if e != nil {
 		ctx.HTML(http.StatusOK, "error.tmpl", gin.H{
 			"error": e,
 		})
+		log.Panicln("数据无法更新", e.Error())
 	}
-	log.Panicln("数据无法更新", e.Error())
-	ctx.Redirect(http.StatusMovedPermanently, "/user/profile?id="+strconv.Itoa(u.ID))
+	ctx.Redirect(http.StatusMovedPermanently, "/user/profile?id="+strconv.Itoa(u.Id))
 }
